@@ -2,8 +2,8 @@ CC=g++
 CFLAGS=-Wall
 LIBS=-lSDL2 -lglfw3 -lGL -ldl
 
-SRC=glad.c main.cpp display.cpp
-OBJ=glad.o main.o display.o
+SRC=glad.c main.cpp display.cpp shader.cpp
+OBJ=glad.o main.o display.o shader.cpp
 
 debuggable: CFLAGS += -g
 debuggable: exe
