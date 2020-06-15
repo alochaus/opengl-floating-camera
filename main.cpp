@@ -1,25 +1,21 @@
 #include<glad/glad.h>
 #include<GLFW/glfw3.h>
 #include<iostream>
+#include<string>
 #include<fstream>
 #include<sstream>
-#include<vector>
 
-void processInput(GLFWwindow *window);
-void frameBufferSizeCallback(GLFWwindow* window, int width, int height);
+struct ShaderSource
+{
+	std::string vertexshader;
+	std::string fragmentshader;
+};
 
-const char* vertexShaderSource = "#version 330 core\n"
-    "layout (location = 0) in vec3 aPos;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-    "}\0";
-const char* fragmentShaderSource = "#version 330 core\n"
-    "out vec4 FragColor;\n"
-    "void main()\n"
-    "{\n"
-    "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-    "}\n\0";
+void ProcessInput(GLFWwindow *window);
+void FrameBufferSizeCallback(GLFWwindow* window, int width, int height);
+ShaderSource ParseShader(const std::string& filepath);
+unsigned int CompileShader(const unsigned int type, const std::string& source);
+unsigned int LinkProgram(const unsigned int vertexshader, const unsigned int fragmentshader);
 
 const unsigned short W_WIDTH  = 800;
 const unsigned short W_HEIGHT = 600;
@@ -50,47 +46,19 @@ int main(int argc, char** argv)
 		return -1;
 	}
 	glfwMakeContextCurrent(window);
-	glfwSetFramebufferSizeCallback(window, frameBufferSizeCallback);
+	glfwSetFramebufferSizeCallback(window, FrameBufferSizeCallback);
 	if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return -1;
 	}
 
-	int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-	glCompileShader(vertexShader);
-	int success;
-	char infoLog[512];
-	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-	if(!success)
-	{
-		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED" << std::endl << infoLog << std::endl;
-	}
-
-	int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-	glCompileShader(fragmentShader);
-	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-	if(!success)
-	{
-		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED" << std::endl << infoLog << std::endl;
-	}
-
-	int shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	glLinkProgram(shaderProgram);
-	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-	if(!success)
-	{
-		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED" << infoLog << std::endl;
-	}
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
+	ShaderSource src = ParseShader("basic.shader");
+	unsigned int vertexshader = CompileShader(GL_VERTEX_SHADER, src.vertexshader);
+	unsigned int fragmentshader = CompileShader(GL_FRAGMENT_SHADER, src.fragmentshader);
+	unsigned int shaderprogram = LinkProgram(vertexshader, fragmentshader);
+	glDeleteShader(vertexshader);
+	glDeleteShader(fragmentshader);
 
 	float vertices[12] = {
 		 0.5f,  0.5f,  0.0f,  // top right
@@ -125,7 +93,7 @@ int main(int argc, char** argv)
 	
 	while(!glfwWindowShouldClose(window))
 	{
-		processInput(window);
+		ProcessInput(window);
 
 		glClearColor(
 			0x00 / 255.0, //R
@@ -135,7 +103,7 @@ int main(int argc, char** argv)
 		);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glUseProgram(shaderProgram);
+		glUseProgram(shaderprogram);
 		glBindVertexArray(VAO);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
@@ -147,13 +115,90 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-void processInput(GLFWwindow *window)
+void ProcessInput(GLFWwindow *window)
 {
 	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 }
 
-void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
+void FrameBufferSizeCallback(GLFWwindow* window, int width, int height)
 {
 	glViewport(0, 0, width, height);
+}
+
+
+ShaderSource ParseShader(const std::string& filepath)
+{
+	std::ifstream stream(filepath);
+	std::string line;
+	std::stringstream ss[2];
+
+	enum class ShaderType {
+		NONE = -1,
+		VERTEX = 0,
+		FRAGMENT = 1
+	};
+	
+	ShaderType type = ShaderType::NONE;
+
+	while(getline(stream, line))
+	{
+		if(line.find("#shader") != std::string::npos)
+		{
+			if(line.find("vertex") != std::string::npos)
+			{
+				type = ShaderType::VERTEX;
+			}
+			else if(line.find("fragment") != std::string::npos)
+			{
+				type = ShaderType::FRAGMENT;
+			}
+		}
+		else
+		{
+			ss[(int)type] << line << std::endl;
+		}
+	}
+
+	return {ss[0].str(), ss[1].str()};
+}
+
+unsigned int CompileShader(const unsigned int type, const std::string& source)
+{
+	unsigned int shader = glCreateShader(type);
+	const char* src = source.c_str();
+	glShaderSource(shader, 1, &src, NULL);
+	glCompileShader(shader);
+
+	int success;
+	char infoLog[512];
+
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+	if(!success)
+	{
+		glGetShaderInfoLog(shader, 512, NULL, infoLog);
+		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED" << std::endl << infoLog << std::endl;
+	}
+
+	return shader;
+}
+
+unsigned int LinkProgram(const unsigned int vertexshader, const unsigned int fragmentshader)
+{
+	int shaderprogram = glCreateProgram();
+	glAttachShader(shaderprogram, vertexshader);
+	glAttachShader(shaderprogram, fragmentshader);
+	glLinkProgram(shaderprogram);
+
+	int success;
+	char infoLog[512];
+
+	glGetProgramiv(shaderprogram, GL_LINK_STATUS, &success);
+	if(!success)
+	{
+		glGetProgramInfoLog(shaderprogram, 512, NULL, infoLog);
+		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED" << infoLog << std::endl;
+	}
+
+	return shaderprogram;
 }
