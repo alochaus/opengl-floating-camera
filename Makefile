@@ -5,7 +5,7 @@ LIBS=-lglfw3 -lGL -ldl -lpthread -lX11
 SRC=glad.c main.cpp
 OBJ=glad.o main.o
 
-debuggable: CFLAGS += -g
+debuggable: CFLAGS += -g -DDEBUG
 debuggable: exe
 
 # g++ glad.c main.cpp display.cpp -lSDL2 -lglfw3 -lGL -ldl
@@ -21,5 +21,5 @@ glad.o: glad.c
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c $<
 
-clear:
+clean:
 	rm *.o exe
