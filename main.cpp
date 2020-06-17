@@ -4,7 +4,7 @@
 #include<string>
 #include<fstream>
 #include<sstream>
-
+#include<cmath>
 #ifndef DEBUG
 #define ASSERT(x)
 #define GLCall(x) x;
@@ -65,7 +65,7 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-	ShaderSource src = ParseShader("basic.shader");
+	ShaderSource src = ParseShader("uniform.shader");
 	unsigned int vertexshader = CompileShader(GL_VERTEX_SHADER, src.vertexshader);
 	unsigned int fragmentshader = CompileShader(GL_FRAGMENT_SHADER, src.fragmentshader);
 	unsigned int shaderprogram = LinkProgram(vertexshader, fragmentshader);
@@ -100,23 +100,28 @@ int main(int argc, char** argv)
 	glEnableVertexAttribArray(0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0); 
-	glBindVertexArray(0);
+	glBindVertexArray(VAO);
 
-	
+	glUseProgram(shaderprogram);
+
 	while(!glfwWindowShouldClose(window))
 	{
 		ProcessInput(window);
 
 		glClearColor(
-			0x00 / 255.0, //R
-			0x77 / 255.0, //G
+			0xAA / 255.0, //R
+			0x00 / 255.0, //G
 			0xDD / 255.0, //B
 			0xFF / 255.0  //A
 		);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT);
 
-		glUseProgram(shaderprogram);
-		glBindVertexArray(VAO);
+		int vertexcolorloaction = glGetUniformLocation(shaderprogram, "ourColor");
+		float timevalue = glfwGetTime();
+		float red = sin(timevalue);
+		float blue = cos(timevalue);
+		float green = tan(timevalue);
+		glUniform4f(vertexcolorloaction, red, green, blue, 1.0f);
 		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0));
 
 		glfwSwapBuffers(window);
