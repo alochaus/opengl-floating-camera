@@ -65,18 +65,18 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-	ShaderSource src = ParseShader("uniform.shader");
+	ShaderSource src = ParseShader("interpolation.shader");
 	unsigned int vertexshader = CompileShader(GL_VERTEX_SHADER, src.vertexshader);
 	unsigned int fragmentshader = CompileShader(GL_FRAGMENT_SHADER, src.fragmentshader);
 	unsigned int shaderprogram = LinkProgram(vertexshader, fragmentshader);
 	glDeleteShader(vertexshader);
 	glDeleteShader(fragmentshader);
 
-	float vertices[12] = {
-		 0.5f,  0.5f,  0.0f,  // top right
-		 0.5f, -0.5f,  0.0f,  // bottom right
-		-0.5f, -0.5f,  0.0f,  // bottom left
-		-0.5f,  0.5f,  0.0f   // top left
+	float vertices[24] = {
+		 0.5f,  0.5f,  0.0f,	1.0f, 0.0f, 0.0f,  // top right
+		 0.5f, -0.5f,  0.0f,	0.0f, 1.0f, 0.0f,  // bottom right
+		-0.5f, -0.5f,  0.0f,	0.0f, 0.0f, 1.0f,  // bottom left
+		-0.5f,  0.5f,  0.0f,	0.0f, 1.0f, 0.0f   // top left
 	};
 
 	unsigned int indices[6] = {
@@ -96,10 +96,12 @@ int main(int argc, char** argv)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0); 
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(VAO);
 
 	glUseProgram(shaderprogram);
@@ -116,17 +118,15 @@ int main(int argc, char** argv)
 		);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		int vertexcolorloaction = glGetUniformLocation(shaderprogram, "ourColor");
-		float timevalue = glfwGetTime();
-		float red = sin(timevalue);
-		float blue = cos(timevalue);
-		float green = tan(timevalue);
-		glUniform4f(vertexcolorloaction, red, green, blue, 1.0f);
 		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0));
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
+
+	glDeleteBuffers(1, &EBO);
+	glDeleteBuffers(1, &VBO);
+	glDeleteVertexArrays(1, &VAO);
 
 	glfwTerminate();
 	return 0;
