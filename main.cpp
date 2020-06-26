@@ -69,7 +69,7 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-	ShaderSource src = ParseShader("res/shaders/texture.shader");
+	ShaderSource src = ParseShader("res/shaders/texture_mix.shader");
 	unsigned int vertexshader = CompileShader(GL_VERTEX_SHADER, src.vertexshader);
 	unsigned int fragmentshader = CompileShader(GL_FRAGMENT_SHADER, src.fragmentshader);
 	unsigned int shaderprogram = LinkProgram(vertexshader, fragmentshader);
@@ -78,10 +78,10 @@ int main(int argc, char** argv)
 
 	float vertices[32] = {
 		// positions        	// colors        	// texture coords
-		 0.5f,  0.5f,  0.0f,	1.0f, 0.0f, 0.0f,	1.0f, 1.0f,	// top right
-		 0.5f, -0.5f,  0.0f,	0.0f, 1.0f, 0.0f,	1.0f, 0.0f,	// bottom right
+		 0.5f,  0.5f,  0.0f,	1.0f, 0.0f, 0.0f,	2.0f, 2.0f,	// top right
+		 0.5f, -0.5f,  0.0f,	0.0f, 1.0f, 0.0f,	2.0f, 0.0f,	// bottom right
 		-0.5f, -0.5f,  0.0f,	0.0f, 0.0f, 1.0f,	0.0f, 0.0f,	// bottom left
-		-0.5f,  0.5f,  0.0f,	0.0f, 1.0f, 0.0f,	0.0f, 1.0f	// top left
+		-0.5f,  0.5f,  0.0f,	0.0f, 1.0f, 0.0f,	0.0f, 2.0f	// top left
 	};
 
 	unsigned int indices[6] = {
@@ -108,9 +108,9 @@ int main(int argc, char** argv)
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
 
-	unsigned int texture;
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
+	unsigned int texture0, texture1;
+	glGenTextures(1, &texture0);
+	glBindTexture(GL_TEXTURE_2D, texture0);
 	
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -119,6 +119,7 @@ int main(int argc, char** argv)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	int width, height, nrChannels;
+	stbi_set_flip_vertically_on_load(true);
 	unsigned char* data = stbi_load(FileSystem::getPath("res/textures/container.jpg").c_str(), &width, &height, &nrChannels, 0);
 	if(data)
 	{
@@ -131,10 +132,32 @@ int main(int argc, char** argv)
 	}
 	stbi_image_free(data);
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(VAO);
+	glGenTextures(1, &texture1);
+	glBindTexture(GL_TEXTURE_2D, texture1);
+	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	stbi_set_flip_vertically_on_load(true);
+	data = stbi_load(FileSystem::getPath("res/textures/pepe.jpg").c_str(), &width, &height, &nrChannels, 0);
+	if(data)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::cout << "Failed to load texture" << std::endl;
+	}
+	stbi_image_free(data);
 
 	glUseProgram(shaderprogram);
+	glUniform1i(glGetUniformLocation(shaderprogram, "texture1"), 0);
+	glUniform1i(glGetUniformLocation(shaderprogram, "texture2"), 1);
+
 
 	while(!glfwWindowShouldClose(window))
 	{
@@ -147,7 +170,14 @@ int main(int argc, char** argv)
 			0xFF / 255.0  //A
 		);
 		glClear(GL_COLOR_BUFFER_BIT);
+		
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture0);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, texture1);
 
+		glUseProgram(shaderprogram);
+		glBindVertexArray(VAO);
 		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0));
 
 		glfwSwapBuffers(window);
