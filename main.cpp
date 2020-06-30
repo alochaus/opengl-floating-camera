@@ -72,7 +72,7 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-	ShaderSource src = ParseShader("res/shaders/transform.shader");
+	ShaderSource src = ParseShader("res/shaders/projection.shader");
 	unsigned int vertexshader = CompileShader(GL_VERTEX_SHADER, src.vertexshader);
 	unsigned int fragmentshader = CompileShader(GL_FRAGMENT_SHADER, src.fragmentshader);
 	unsigned int shaderprogram = LinkProgram(vertexshader, fragmentshader);
@@ -159,6 +159,21 @@ int main(int argc, char** argv)
 	glUniform1i(glGetUniformLocation(shaderprogram, "texture1"), 0);
 	glUniform1i(glGetUniformLocation(shaderprogram, "texture2"), 1);
 
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, texture1);
+
+	glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
+	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 100.0f);
+
+	unsigned int modellocation = glGetUniformLocation(shaderprogram, "model");
+	glUniformMatrix4fv(modellocation, 1, GL_FALSE, glm::value_ptr(model));
+	unsigned int viewlocation = glGetUniformLocation(shaderprogram, "view");
+	glUniformMatrix4fv(viewlocation, 1, GL_FALSE, &view[0][0]);
+	unsigned int projectionlocation = glGetUniformLocation(shaderprogram, "projection");
+	glUniformMatrix4fv(projectionlocation, 1, GL_FALSE, &projection[0][0]);
 
 	while(!glfwWindowShouldClose(window))
 	{
@@ -172,19 +187,6 @@ int main(int argc, char** argv)
 		);
 		glClear(GL_COLOR_BUFFER_BIT);
 		
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture0);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, texture1);
-
-		glm::mat4 transform = glm::mat4(1.0f);
-		transform = glm::translate(transform, glm::vec3(0.2f, -0.2f, 0.0f));
-		transform = glm::rotate(transform, (float)glfwGetTime(), glm::vec3(0.5f, 0.5f, 0.5f));
-
-		glUseProgram(shaderprogram);
-		unsigned int transformlocation = glGetUniformLocation(shaderprogram, "transform");
-		glUniformMatrix4fv(transformlocation, 1, GL_FALSE, glm::value_ptr(transform));
-
 		glBindVertexArray(VAO);
 		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0));
 
