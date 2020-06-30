@@ -79,19 +79,56 @@ int main(int argc, char** argv)
 	glDeleteShader(vertexshader);
 	glDeleteShader(fragmentshader);
 
-	float vertices[20] = {
-		// positions        	// texture coords
-		 0.5f,  0.5f,  0.0f,	1.0f, 1.0f,	// top right
-		 0.5f, -0.5f,  0.0f,	1.0f, 0.0f,	// bottom right
-		-0.5f, -0.5f,  0.0f,	0.0f, 0.0f,	// bottom left
-		-0.5f,  0.5f,  0.0f,	0.0f, 1.0f	// top left
-	};
+	float vertices[180] = {
+	-0.5f, -0.5f, -0.5f,	0.0f, 0.0f,
+	 0.5f, -0.5f, -0.5f,	1.0f, 0.0f,
+	 0.5f,  0.5f, -0.5f,	1.0f, 1.0f,
+	 0.5f,  0.5f, -0.5f,	1.0f, 1.0f,
+	-0.5f,  0.5f, -0.5f,	0.0f, 1.0f,
+	-0.5f, -0.5f, -0.5f,	0.0f, 0.0f,
 
+	-0.5f, -0.5f,  0.5f,	0.0f, 0.0f,
+	 0.5f, -0.5f,  0.5f,	1.0f, 0.0f,
+	 0.5f,  0.5f,  0.5f,	1.0f, 1.0f,
+	 0.5f,  0.5f,  0.5f,	1.0f, 1.0f,
+	-0.5f,  0.5f,  0.5f,	0.0f, 1.0f,
+	-0.5f, -0.5f,  0.5f,	0.0f, 0.0f,
+
+	-0.5f,  0.5f,  0.5f,	1.0f, 0.0f,
+	-0.5f,  0.5f, -0.5f,	1.0f, 1.0f,
+	-0.5f, -0.5f, -0.5f,	0.0f, 1.0f,
+	-0.5f, -0.5f, -0.5f,	0.0f, 1.0f,
+	-0.5f, -0.5f,  0.5f,	0.0f, 0.0f,
+	-0.5f,  0.5f,  0.5f,	1.0f, 0.0f,
+
+	 0.5f,  0.5f,  0.5f,	1.0f, 0.0f,
+	 0.5f,  0.5f, -0.5f,	1.0f, 1.0f,
+	 0.5f, -0.5f, -0.5f,	0.0f, 1.0f,
+	 0.5f, -0.5f, -0.5f,	0.0f, 1.0f,
+	 0.5f, -0.5f,  0.5f,	0.0f, 0.0f,
+	 0.5f,  0.5f,  0.5f,	1.0f, 0.0f,
+
+	-0.5f, -0.5f, -0.5f,	0.0f, 1.0f,
+	 0.5f, -0.5f, -0.5f,	1.0f, 1.0f,
+	 0.5f, -0.5f,  0.5f,	1.0f, 0.0f,
+	 0.5f, -0.5f,  0.5f,	1.0f, 0.0f,
+	-0.5f, -0.5f,  0.5f,	0.0f, 0.0f,
+	-0.5f, -0.5f, -0.5f,	0.0f, 1.0f,
+
+	-0.5f,  0.5f, -0.5f,	0.0f, 1.0f,
+	 0.5f,  0.5f, -0.5f,	1.0f, 1.0f,
+	 0.5f,  0.5f,  0.5f,	1.0f, 0.0f,
+	 0.5f,  0.5f,  0.5f,	1.0f, 0.0f,
+	-0.5f,  0.5f,  0.5f,	0.0f, 0.0f,
+	-0.5f,  0.5f, -0.5f,	0.0f, 1.0f
+};
+
+/*
 	unsigned int indices[6] = {
 		0, 1, 3,
 		1, 2, 3
 	};
-
+ */
 	unsigned int VBO, VAO, EBO;
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
@@ -102,7 +139,7 @@ int main(int argc, char** argv)
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	// glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
@@ -164,31 +201,35 @@ int main(int argc, char** argv)
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, texture1);
 
-	glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
-	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 100.0f);
-
-	unsigned int modellocation = glGetUniformLocation(shaderprogram, "model");
-	glUniformMatrix4fv(modellocation, 1, GL_FALSE, glm::value_ptr(model));
-	unsigned int viewlocation = glGetUniformLocation(shaderprogram, "view");
-	glUniformMatrix4fv(viewlocation, 1, GL_FALSE, &view[0][0]);
-	unsigned int projectionlocation = glGetUniformLocation(shaderprogram, "projection");
-	glUniformMatrix4fv(projectionlocation, 1, GL_FALSE, &projection[0][0]);
+	glEnable(GL_DEPTH_TEST);
 
 	while(!glfwWindowShouldClose(window))
 	{
 		ProcessInput(window);
 
 		glClearColor(
-			0xAA / 255.0, //R
-			0x00 / 255.0, //G
-			0xDD / 255.0, //B
+			0x99 / 255.0, //R
+			0x66 / 255.0, //G
+			0x66 / 255.0, //B
 			0xFF / 255.0  //A
 		);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glUseProgram(shaderprogram);
+
+		glm::mat4 model = glm::rotate(glm::mat4(1.0f), (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
+		glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
+		glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 100.0f);
+
+		unsigned int modellocation = glGetUniformLocation(shaderprogram, "model");
+		glUniformMatrix4fv(modellocation, 1, GL_FALSE, glm::value_ptr(model));
+		unsigned int viewlocation = glGetUniformLocation(shaderprogram, "view");
+		glUniformMatrix4fv(viewlocation, 1, GL_FALSE, &view[0][0]);
+		unsigned int projectionlocation = glGetUniformLocation(shaderprogram, "projection");
+		glUniformMatrix4fv(projectionlocation, 1, GL_FALSE, &projection[0][0]);
 		
 		glBindVertexArray(VAO);
-		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0));
+		GLCall(glDrawArrays(GL_TRIANGLES, 0, 36));
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
