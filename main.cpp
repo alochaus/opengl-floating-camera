@@ -4,37 +4,16 @@
 #include<stb_image.h>
 #include<iostream>
 #include<string>
-#include<fstream>
-#include<sstream>
-#include<cmath>
 #include<learnopengl/filesystem.h>
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
+#include"diplay.h"
+#include"shader.h"
+#include"debug.h"
 
-#ifndef DEBUG
-#define ASSERT(x)
-#define GLCall(x) x;
-#else
-#define ASSERT(x) if(!(x)) std::cin.get();
-#define GLCall(x) GLClearError();\
-                  x;\
-                  ASSERT(GLLogCall(#x, __FILE__, __LINE__));
-#endif
 
-struct ShaderSource
-{
-	std::string vertexshader;
-	std::string fragmentshader;
-};
-
-void GLClearError();
-bool GLLogCall(const char* function, const char* filename, const unsigned short line);
 void ProcessInput(GLFWwindow *window);
-void FrameBufferSizeCallback(GLFWwindow* window, int width, int height);
-ShaderSource ParseShader(const std::string& filepath);
-unsigned int CompileShader(const unsigned int type, const std::string& source);
-unsigned int LinkProgram(const unsigned int vertexshader, const unsigned int fragmentshader);
 
 const unsigned short W_WIDTH  = 800;
 const unsigned short W_HEIGHT = 600;
@@ -42,93 +21,53 @@ const char*          W_TITLE  = "opengl window";
 
 int main(int argc, char** argv)
 {
-	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-#ifdef __MACOS__
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-
-	GLFWwindow* window = glfwCreateWindow(
-		W_WIDTH,
-		W_HEIGHT,
-		W_TITLE,
-		NULL,
-		NULL
-	);
-
-	if(window == NULL)
-	{
-		std::cout << "Failed to create window" << std::endl;
-		glfwTerminate();
-		return -1;
-	}
-	glfwMakeContextCurrent(window);
-	glfwSetFramebufferSizeCallback(window, FrameBufferSizeCallback);
-	if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-	{
-		std::cout << "Failed to initialize GLAD" << std::endl;
-		return -1;
-	}
-
-	ShaderSource src = ParseShader("res/shaders/projection.shader");
-	unsigned int vertexshader = CompileShader(GL_VERTEX_SHADER, src.vertexshader);
-	unsigned int fragmentshader = CompileShader(GL_FRAGMENT_SHADER, src.fragmentshader);
-	unsigned int shaderprogram = LinkProgram(vertexshader, fragmentshader);
-	glDeleteShader(vertexshader);
-	glDeleteShader(fragmentshader);
+	Display display(W_WIDTH, W_HEIGHT, W_TITLE);
+	Shader shader("res/shaders/projection.shader");
 
 	float vertices[180] = {
-	-0.5f, -0.5f, -0.5f,	0.0f, 0.0f,
-	 0.5f, -0.5f, -0.5f,	1.0f, 0.0f,
-	 0.5f,  0.5f, -0.5f,	1.0f, 1.0f,
-	 0.5f,  0.5f, -0.5f,	1.0f, 1.0f,
-	-0.5f,  0.5f, -0.5f,	0.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f,	0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,	0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,	1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,	1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,	1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,	0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,	0.0f, 0.0f,
 
-	-0.5f, -0.5f,  0.5f,	0.0f, 0.0f,
-	 0.5f, -0.5f,  0.5f,	1.0f, 0.0f,
-	 0.5f,  0.5f,  0.5f,	1.0f, 1.0f,
-	 0.5f,  0.5f,  0.5f,	1.0f, 1.0f,
-	-0.5f,  0.5f,  0.5f,	0.0f, 1.0f,
-	-0.5f, -0.5f,  0.5f,	0.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,	0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,	1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,	1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,	1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,	0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,	0.0f, 0.0f,
 
-	-0.5f,  0.5f,  0.5f,	1.0f, 0.0f,
-	-0.5f,  0.5f, -0.5f,	1.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f,	0.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f,	0.0f, 1.0f,
-	-0.5f, -0.5f,  0.5f,	0.0f, 0.0f,
-	-0.5f,  0.5f,  0.5f,	1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,	1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,	1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,	0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,	0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,	0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,	1.0f, 0.0f,
 
-	 0.5f,  0.5f,  0.5f,	1.0f, 0.0f,
-	 0.5f,  0.5f, -0.5f,	1.0f, 1.0f,
-	 0.5f, -0.5f, -0.5f,	0.0f, 1.0f,
-	 0.5f, -0.5f, -0.5f,	0.0f, 1.0f,
-	 0.5f, -0.5f,  0.5f,	0.0f, 0.0f,
-	 0.5f,  0.5f,  0.5f,	1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,	1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,	1.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,	0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,	0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,	0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,	1.0f, 0.0f,
 
-	-0.5f, -0.5f, -0.5f,	0.0f, 1.0f,
-	 0.5f, -0.5f, -0.5f,	1.0f, 1.0f,
-	 0.5f, -0.5f,  0.5f,	1.0f, 0.0f,
-	 0.5f, -0.5f,  0.5f,	1.0f, 0.0f,
-	-0.5f, -0.5f,  0.5f,	0.0f, 0.0f,
-	-0.5f, -0.5f, -0.5f,	0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,	0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,	1.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,	1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,	1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,	0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,	0.0f, 1.0f,
 
-	-0.5f,  0.5f, -0.5f,	0.0f, 1.0f,
-	 0.5f,  0.5f, -0.5f,	1.0f, 1.0f,
-	 0.5f,  0.5f,  0.5f,	1.0f, 0.0f,
-	 0.5f,  0.5f,  0.5f,	1.0f, 0.0f,
-	-0.5f,  0.5f,  0.5f,	0.0f, 0.0f,
-	-0.5f,  0.5f, -0.5f,	0.0f, 1.0f
-};
-
-/*
-	unsigned int indices[6] = {
-		0, 1, 3,
-		1, 2, 3
+		-0.5f,  0.5f, -0.5f,	0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,	1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,	1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,	1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,	0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,	0.0f, 1.0f
 	};
- */
+
 	unsigned int VBO, VAO, EBO;
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
@@ -139,7 +78,6 @@ int main(int argc, char** argv)
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	// glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
@@ -192,9 +130,9 @@ int main(int argc, char** argv)
 	}
 	stbi_image_free(data);
 
-	glUseProgram(shaderprogram);
-	glUniform1i(glGetUniformLocation(shaderprogram, "texture1"), 0);
-	glUniform1i(glGetUniformLocation(shaderprogram, "texture2"), 1);
+	shader.use();
+	shader.set_int(0, "texture1");
+	shader.set_int(1, "texture2");
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture0);
@@ -203,9 +141,9 @@ int main(int argc, char** argv)
 
 	glEnable(GL_DEPTH_TEST);
 
-	while(!glfwWindowShouldClose(window))
+	while(display.is_open())
 	{
-		ProcessInput(window);
+		ProcessInput(display.get_window());
 
 		glClearColor(
 			0x99 / 255.0, //R
@@ -215,24 +153,21 @@ int main(int argc, char** argv)
 		);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glUseProgram(shaderprogram);
+		shader.use();
 
 		glm::mat4 model = glm::rotate(glm::mat4(1.0f), (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
 		glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
 		glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 100.0f);
 
-		unsigned int modellocation = glGetUniformLocation(shaderprogram, "model");
-		glUniformMatrix4fv(modellocation, 1, GL_FALSE, glm::value_ptr(model));
-		unsigned int viewlocation = glGetUniformLocation(shaderprogram, "view");
-		glUniformMatrix4fv(viewlocation, 1, GL_FALSE, &view[0][0]);
-		unsigned int projectionlocation = glGetUniformLocation(shaderprogram, "projection");
-		glUniformMatrix4fv(projectionlocation, 1, GL_FALSE, &projection[0][0]);
+		shader.set_mat4(model, "model");
+		shader.set_mat4(view, "view");
+		shader.set_mat4(projection, "projection");
 		
 		glBindVertexArray(VAO);
 		GLCall(glDrawArrays(GL_TRIANGLES, 0, 36));
 
-		glfwSwapBuffers(window);
-		glfwPollEvents();
+		display.swap_buffers();
+		display.poll_event();
 	}
 
 	glDeleteBuffers(1, &EBO);
@@ -243,139 +178,8 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-void ProcessInput(GLFWwindow *window)
+void ProcessInput(GLFWwindow* window)
 {
 	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
-}
-
-void FrameBufferSizeCallback(GLFWwindow* window, int width, int height)
-{
-	glViewport(0, 0, width, height);
-}
-
-
-ShaderSource ParseShader(const std::string& filepath)
-{
-	std::ifstream stream(filepath);
-	std::string line;
-	std::stringstream ss[2];
-
-	enum class ShaderType {
-		NONE = -1,
-		VERTEX = 0,
-		FRAGMENT = 1
-	};
-	
-	ShaderType type = ShaderType::NONE;
-
-	while(getline(stream, line))
-	{
-		if(line.find("#shader") != std::string::npos)
-		{
-			if(line.find("vertex") != std::string::npos)
-			{
-				type = ShaderType::VERTEX;
-			}
-			else if(line.find("fragment") != std::string::npos)
-			{
-				type = ShaderType::FRAGMENT;
-			}
-		}
-		else
-		{
-			ss[(int)type] << line << std::endl;
-		}
-	}
-
-	return {ss[0].str(), ss[1].str()};
-}
-
-unsigned int CompileShader(const unsigned int type, const std::string& source)
-{
-	unsigned int shader = glCreateShader(type);
-	const char* src = source.c_str();
-	glShaderSource(shader, 1, &src, NULL);
-	glCompileShader(shader);
-
-	int success;
-	char infoLog[512];
-
-	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-	if(!success)
-	{
-		glGetShaderInfoLog(shader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED" << std::endl << infoLog << std::endl;
-	}
-
-	return shader;
-}
-
-unsigned int LinkProgram(const unsigned int vertexshader, const unsigned int fragmentshader)
-{
-	int shaderprogram = glCreateProgram();
-	glAttachShader(shaderprogram, vertexshader);
-	glAttachShader(shaderprogram, fragmentshader);
-	glLinkProgram(shaderprogram);
-
-	int success;
-	char infoLog[512];
-
-	glGetProgramiv(shaderprogram, GL_LINK_STATUS, &success);
-	if(!success)
-	{
-		glGetProgramInfoLog(shaderprogram, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED" << infoLog << std::endl;
-	}
-
-	return shaderprogram;
-}
-
-void GLClearError()
-{
-	while(glGetError() != GL_NO_ERROR);
-}
-
-bool GLLogCall(const char* function, const char* filename, const unsigned short line)
-{
-	while(GLenum error = glGetError())
-	{
-		std::string errorname;
-		std::string errordesc;
-		switch(error)
-		{
-			case 0x0500:
-				errorname = "GL_INVALID_ENUM";
-				errordesc = "An unacceptable value is specified for an enumerated argument. The offending command is ignored and has no other side effect than to set the error flag.";
-				break;
-			case 0x0501:
-				errorname = "GL_INVALID_VALUE";
-				errordesc = "A numeric argument is out of range. The offending command is ignored and has no other side effect than to set the error flag.";
-				break;
-			case 0x0503:
-				errorname = "GL_INVALID_OPERATION";
-				errordesc = "The specified operation is not allowed in the current state. The offending command is ignored and has no other side effect than to set the error flag.";
-				break;
-			case 0x0506:
-				errorname = "GL_INVALID_FRAMEBUFFER_OPERATION";
-				errordesc = "The framebuffer object is not complete. The offending command is ignored and has no other side effect than to set the error flag.";
-				break;
-			case 0x0505:
-				errorname = "GL_OUT_OF_MEMORY";
-				errordesc = "There is not enough memory left to execute the command. The state of the GL is undefined, except for the state of the error flags, after this error is recorded.";
-				break;
-			default:
-				errorname = std::to_string(error);
-				errordesc = "";
-		}
-
-		std::cout 
-		<< "[OpenGL Error]" << std::endl
-		<< "File:\t" << filename << std::endl
-		<< line << ":\t" << function << std::endl
-		<< errorname << std::endl
-		<< errordesc << std::endl;
-		return false; //GL_NO_ERROR = 0
-	}
-	return true;
 }
