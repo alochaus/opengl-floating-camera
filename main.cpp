@@ -68,6 +68,19 @@ int main(int argc, char** argv)
 		-0.5f,  0.5f, -0.5f,	0.0f, 1.0f
 	};
 
+	glm::vec3 cubepositions[10] = {
+		glm::vec3( 0.0f,  0.0f,  0.0f),
+		glm::vec3( 2.0f,  5.0f, -15.0f),
+		glm::vec3(-1.5f, -2.2f, -2.5f),
+		glm::vec3(-3.8f, -2.0f, -12.3f),
+		glm::vec3( 2.4f, -0.4f, -3.5f),
+		glm::vec3(-1.7f,  3.0f, -7.5f),
+		glm::vec3( 1.3f, -2.0f, -2.5f),
+		glm::vec3( 1.5f,  2.0f, -2.5f),
+		glm::vec3( 1.5f,  0.2f, -1.5f),
+		glm::vec3(-1.3f,  1.0f, -1.5f)
+	};
+
 	unsigned int VBO, VAO, EBO;
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
@@ -155,16 +168,27 @@ int main(int argc, char** argv)
 
 		shader.use();
 
-		glm::mat4 model = glm::rotate(glm::mat4(1.0f), (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
-		glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
+		glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -5.0f));
 		glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 100.0f);
 
-		shader.set_mat4(model, "model");
 		shader.set_mat4(view, "view");
 		shader.set_mat4(projection, "projection");
-		
+
 		glBindVertexArray(VAO);
-		GLCall(glDrawArrays(GL_TRIANGLES, 0, 36));
+
+		for(unsigned int i=0; i < 10; i++)
+		{
+			glm::mat4 model = glm::mat4(1.0f);
+			model = glm::translate(model, cubepositions[i]);
+			float angle = glm::radians(700.0f) * (float)glfwGetTime();
+			int x = (i % 2 == 0) ? -1.0f : 1.0f;
+			int y = (i % 3 == 0) ? -1.0f : 1.0f;
+			model = glm::rotate(model, glm::radians(angle), glm::vec3(x, y, 0.5f));
+			shader.set_mat4(model, "model");
+
+			GLCall(glDrawArrays(GL_TRIANGLES, 0, 36));
+		}
+
 
 		display.swap_buffers();
 		display.poll_event();
