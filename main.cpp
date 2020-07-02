@@ -154,25 +154,30 @@ int main(int argc, char** argv)
 
 	glEnable(GL_DEPTH_TEST);
 
+	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 100.0f);
+	shader.set_mat4(projection, "projection");
+
 	while(display.is_open())
 	{
 		ProcessInput(display.get_window());
 
 		glClearColor(
-			0x99 / 255.0, //R
-			0x66 / 255.0, //G
-			0x66 / 255.0, //B
+			0x55 / 255.0, //R
+			0xAA / 255.0, //G
+			0xFF / 255.0, //B
 			0xFF / 255.0  //A
 		);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		shader.use();
 
-		glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -5.0f));
-		glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)W_WIDTH / (float)W_HEIGHT, 0.1f, 100.0f);
+		glm::mat4 view = glm::mat4(1.0f);
+		float radius = 10.0f;
+		float cam_x = sin(glfwGetTime()) * radius;
+		float cam_z = cos(glfwGetTime()) * radius;
+		view = glm::lookAt(glm::vec3(cam_x, 0.0f, cam_z), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 		shader.set_mat4(view, "view");
-		shader.set_mat4(projection, "projection");
 
 		glBindVertexArray(VAO);
 
@@ -180,7 +185,7 @@ int main(int argc, char** argv)
 		{
 			glm::mat4 model = glm::mat4(1.0f);
 			model = glm::translate(model, cubepositions[i]);
-			float angle = glm::radians(700.0f) * (float)glfwGetTime();
+			float angle = glm::radians(1400.0f) * (float)glfwGetTime();
 			int x = (i % 2 == 0) ? -1.0f : 1.0f;
 			int y = (i % 3 == 0) ? -1.0f : 1.0f;
 			model = glm::rotate(model, glm::radians(angle), glm::vec3(x, y, 0.5f));
