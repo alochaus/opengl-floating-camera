@@ -1,8 +1,8 @@
 #include"shader.h"
 
-ShaderSource parse_shader(const std::string& filepath);
-unsigned int compile_shader(const unsigned int type, const std::string& source);
-unsigned int link_program(const unsigned int vertexshader, const unsigned int fragmentshader);
+static ShaderSource parse_shader(const std::string& filepath);
+static unsigned int compile_shader(const unsigned int type, const std::string& source);
+static unsigned int link_program(const unsigned int vertexshader, const unsigned int fragmentshader);
 
 Shader::Shader(const std::string& filepath)
 {
@@ -38,7 +38,7 @@ void Shader::set_mat4(const glm::mat4 &mat, const char* name)
 	glUniformMatrix4fv(glGetUniformLocation(id, name), 1, GL_FALSE, &mat[0][0]);
 }
 
-ShaderSource parse_shader(const std::string& filepath)
+static ShaderSource parse_shader(const std::string& filepath)
 {
 	std::ifstream stream(filepath);
 	std::string line;
@@ -74,7 +74,7 @@ ShaderSource parse_shader(const std::string& filepath)
 	return {ss[0].str(), ss[1].str()};
 }
 
-unsigned int compile_shader(const unsigned int type, const std::string& source)
+static unsigned int compile_shader(const unsigned int type, const std::string& source)
 {
 	unsigned int shader = glCreateShader(type);
 	const char* src = source.c_str();
@@ -94,7 +94,7 @@ unsigned int compile_shader(const unsigned int type, const std::string& source)
 	return shader;
 }
 
-unsigned int link_program(const unsigned int vertexshader, const unsigned int fragmentshader)
+static unsigned int link_program(const unsigned int vertexshader, const unsigned int fragmentshader)
 {
 	int shaderprogram = glCreateProgram();
 	glAttachShader(shaderprogram, vertexshader);
