@@ -8,24 +8,12 @@
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
-#include"diplay.h"
+
+#include"global.h"
+#include"display.h"
 #include"shader.h"
+#include"input.h"
 #include"debug.h"
-
-void ProcessInput(GLFWwindow *window);
-
-unsigned short W_WIDTH  = 800;
-unsigned short W_HEIGHT = 600;
-const char*    W_TITLE  = "opengl window";
-
-float fov       =  45.0f;
-
-glm::vec3 camera_pos = glm::vec3(0.0f, 0.0f, 5.0f);
-glm::vec3 camera_front = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
-
-float delta_time = 0.0f;
-float last_frame = 0.0f;
 
 int main(int argc, char** argv)
 {
@@ -168,7 +156,8 @@ int main(int argc, char** argv)
 		float current_frame = glfwGetTime();
 		delta_time = current_frame - last_frame;
 		last_frame = current_frame;
-		ProcessInput(display.get_window());
+
+		input::process_input(display.get_window(), delta_time, camera_pos, camera_front, camera_up);
 
 		glClearColor(
 			0x55 / 255.0, //R
@@ -212,21 +201,4 @@ int main(int argc, char** argv)
 
 	glfwTerminate();
 	return 0;
-}
-
-void ProcessInput(GLFWwindow* window)
-{
-	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, true);
-	
-	const float camera_speed = 2.5 * delta_time;
-
-	if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		camera_pos += camera_speed * camera_front;
-	if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		camera_pos -= glm::normalize(glm::cross(camera_front, camera_up)) * camera_speed;
-	if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		camera_pos -= camera_speed * camera_front;
-	if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		camera_pos += glm::normalize(glm::cross(camera_front, camera_up)) * camera_speed;
 }

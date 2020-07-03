@@ -7,6 +7,13 @@
 #include<glm/gtc/matrix_transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
 #include<iostream>
+#include"input.h"
+
+extern float fov;
+extern unsigned short W_WIDTH;
+extern unsigned short W_HEIGHT;
+
+extern glm::vec3 camera_front;
 
 class Display
 {
